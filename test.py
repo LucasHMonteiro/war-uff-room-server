@@ -44,10 +44,18 @@ class MyServer(BaseHTTPRequestHandler):
 		global rooms
 		params = self.post_params()
 		new_room_b = str.encode('new_room')
+		new_player_b = str.encode('new_player')
+		room_b = str.encode('room')
 		if new_room_b in params.keys():
 			code = random_hash(5)
 			size = int(params[new_room_b][0])
 			create_room(code, size)
+		if new_player_b in params.keys():
+			room = params[room_b][0].decode('utf-8')
+			if rooms[room]['free_space'] > 0:
+				player = params[new_player_b][0].decode('utf-8')
+				rooms[room]['players'].append(player)
+				rooms[room]['free_space'] -= 1 
 		print(rooms)
 
 myServer = HTTPServer((hostName, hostPort), MyServer)
