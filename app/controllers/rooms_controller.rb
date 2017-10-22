@@ -14,7 +14,7 @@ class RoomsController < ApplicationController
         render json: {
           'code': @room.code,
           'size': @room.free_space,
-          'players': @room.players
+          'players': @room.players.map { |player| player.name }
         }
       }
     end
