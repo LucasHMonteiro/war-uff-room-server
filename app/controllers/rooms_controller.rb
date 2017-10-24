@@ -23,6 +23,9 @@ class RoomsController < ApplicationController
   def create
     @room = Room.new(code: params[:code], free_space: params[:size])
     @room.save
+    respond_to do |format|
+      format.json { head :no_content }
+    end
   end
 
   def destroy

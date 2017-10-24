@@ -25,6 +25,7 @@ class PlayersController < ApplicationController
       if @room.players.size < @room.free_space
         @room.players.build(name: params[:name])
         @room.save
+        format.json { head :no_content }
       else
         format.json { render json: 'Room is full' }
       end
