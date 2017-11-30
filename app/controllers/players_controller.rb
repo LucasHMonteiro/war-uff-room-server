@@ -32,6 +32,9 @@ class PlayersController < ApplicationController
     end
   end
 
+  def update
+  end
+
   def destroy
     @player.destroy
     respond_to do |format|
