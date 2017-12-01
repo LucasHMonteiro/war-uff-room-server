@@ -14,6 +14,7 @@ class PlayersController < ApplicationController
         render json: {
           "#{@player.id}": {
             'name': @player.name,
+            'attributes': @player.additional_info
           }
         }
       }

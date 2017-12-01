@@ -14,7 +14,9 @@ class RoomsController < ApplicationController
         render json: {
           'code': @room.code,
           'size': @room.free_space,
-          'players': @room.players.map { |player| player.name }
+          'players': @room.players.each_with_object({}) { |player, hash|
+            hash["#{player.id}"] = { 'name': player.name, 'attributes': player.additional_info }
+          }
         }
       }
     end
