@@ -34,6 +34,8 @@ class PlayersController < ApplicationController
   end
 
   def update
+    @player.additional_info = params[:attributes]
+    @player.save
   end
 
   def destroy
