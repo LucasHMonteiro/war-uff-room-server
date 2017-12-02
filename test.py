@@ -6,31 +6,50 @@ import time
 from cgi import parse_header, parse_multipart
 import random
 import string
+import json
 
 hostName = "127.0.0.1"
 hostPort = 80
 
 rooms = {}
 
-def random_hash(length):
-    pool = string.hexdigits[:16]
-    return ''.join(random.choice(pool) for i in range(length))
+def string_params(params):
+	for key in params:
+		params[key.decode('utf-8')] = params.pop(key)
+	return params
 
-def create_room(code, size):
+def create_room(params):
 	global rooms
+	code = params['code'][0].decode('utf-8');
+	size = int(params['new_room'][0])
 	rooms[code] = {'players':[], 'free_space': size}
 
+def get_room(code):
+	return rooms[code]
 
-class MyServer(BaseHTTPRequestHandler):
+def add_player(params):
+	global rooms
+	room = params['room'][0].decode('utf-8')
+	if rooms[room]['free_space'] > 0:
+		player = params['new_player'][0].decode('utf-8')
+		rooms[room]['players'].append(player)
+		rooms[room]['free_space'] -= 1
 
-	def create_room(size):
-		global rooms
-		code = binascii.hexlify(os.urandom(5))
-		rooms[code] = {'players':[], 'free_space': size}
+class RoomServer(BaseHTTPRequestHandler):
+
+	def get_params(self):
+		path = self.path
+		params = urllib.parse.parse_qs(path[2:])
+		return params
 
 	def do_GET(self):
+		params = self.get_params()
+		room = get_room(params['room'][0])
 		self.send_response(200)
-		self.wfile.write(bytes(str(size), "utf-8"))
+		self.send_header("Content-type", "text/xml")
+		self.send_header('Access-Control-Allow-Origin','*')
+		self.end_headers()
+		self.wfile.write(bytes(json.dumps(room), "utf-8"))
 
 	def post_params(self):
 		ctype, pdict = parse_header(self.headers['content-type'])
@@ -41,30 +60,24 @@ class MyServer(BaseHTTPRequestHandler):
 		return params
 
 	def do_POST(self):
-		global rooms
-		params = self.post_params()
-		new_room_b = str.encode('new_room')
-		new_player_b = str.encode('new_player')
-		room_b = str.encode('room')
-		if new_room_b in params.keys():
-			code = random_hash(5)
-			size = int(params[new_room_b][0])
-			create_room(code, size)
-		if new_player_b in params.keys():
-			room = params[room_b][0].decode('utf-8')
-			if rooms[room]['free_space'] > 0:
-				player = params[new_player_b][0].decode('utf-8')
-				rooms[room]['players'].append(player)
-				rooms[room]['free_space'] -= 1 
+		params = string_params(self.post_params())
+		if 'new_room' in params.keys():
+			create_room(params)
+		if 'new_player' in params.keys():
+			add_player(params)
+		self.send_response(200);
 		print(rooms)
 
-myServer = HTTPServer((hostName, hostPort), MyServer)
+	def do_DELETE(self):
+		pass
+
+room_server = HTTPServer((hostName, hostPort), RoomServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
 
 try:
-	myServer.serve_forever()
+	room_server.serve_forever()
 except KeyboardInterrupt:
 	pass
 
-myServer.server_close()
+room_server.server_close()
 print(time.asctime(), "Server Stops - %s:%s" % (hostName, hostPort))

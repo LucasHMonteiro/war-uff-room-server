@@ -12,10 +12,8 @@ class PlayersController < ApplicationController
     respond_to do |format|
       format.json {
         render json: {
-          "#{@player.id}": {
-            'name': @player.name,
-            'attributes': @player.additional_info
-          }
+          'name': @player.name,
+          'attributes': @player.additional_info
         }
       }
     end
@@ -24,7 +22,7 @@ class PlayersController < ApplicationController
   def create
     respond_to do |format|
       if @room.players.size < @room.free_space
-        @room.players.build(name: params[:name])
+        @room.players.build(name: params[:name], identity: params[:identity])
         @room.save
         format.json { head :no_content }
       else
@@ -34,8 +32,15 @@ class PlayersController < ApplicationController
   end
 
   def update
-    @player.additional_info = params[:attributes]
-    @player.save
+    respond_to do |format|
+      if @player
+        @player.additional_info = params[:attributes]
+        @player.save
+        format.json { head :no_content }
+      else
+        format.json { render json: 'Player doesn\'t exist. Like your future' }
+      end
+    end
   end
 
   def destroy
@@ -48,7 +53,7 @@ class PlayersController < ApplicationController
   private
 
     def set_player
-      @player = Player.find(params[:id])
+      @player = Player.find_by(identity: params[:identity])
     end
 
     def set_room
